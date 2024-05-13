@@ -31,15 +31,16 @@ async function run() {
         await client.connect();
 
         const serviceCollection = client.db('carDoctors').collection('services');
+        const bookingCollection = client.db('carDoctors').collection('bookings')
 
-        // data load
+        //1 data load
         app.get('/services',async(req,res)=>{
             const cursor = serviceCollection.find()
             const result = await cursor.toArray()
             res.send(result);
 
         })
-        // spacic data id load loader to fetch
+        //2 spacic data id load loader to fetch
 
         app.get('/services/:id', async (req,res)=>{
             const id = req.params.id
@@ -52,6 +53,14 @@ async function run() {
             res.send(result);
 
         })
+
+        // 3 bookings  syntax
+
+        app.post('/bookings',async(req,res)=>{
+            const booking = req.body;
+        })
+
+
 
 
 
