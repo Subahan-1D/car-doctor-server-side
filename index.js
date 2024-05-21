@@ -34,7 +34,7 @@ async function run() {
         const bookingCollection = client.db('carDoctors').collection('bookings')
 
         //1 data load
-        app.get('/services',async(req,res)=>{
+        app.get('/services', async (req, res) => {
             const cursor = serviceCollection.find()
             const result = await cursor.toArray()
             res.send(result);
@@ -42,22 +42,37 @@ async function run() {
         })
         //2 spacic data id load loader to fetch
 
-        app.get('/services/:id', async (req,res)=>{
+        app.get('/services/:id', async (req, res) => {
             const id = req.params.id
-            const query = { _id : new ObjectId(id)}
+            const query = { _id: new ObjectId(id) }
             const options = {
                 // Include only the `title` and `imdb` fields in the returned document
-                projection: { title: 1, price: 1 , service_id: 1, },
-              };
-            const result = await serviceCollection.findOne(query,options)
+                projection: { title: 1, price: 1, service_id: 1, img:1 },
+            };
+            const result = await serviceCollection.findOne(query, options)
             res.send(result);
 
         })
 
-        // 3 bookings  syntax
+        // 4 bookings some data 
 
-        app.post('/bookings',async(req,res)=>{
+        app.get('/bookings', async(req,res)=>{
+            console.log(req.query.email);
+            let query = {}
+            if(req.query?.email){
+                query ={email :req.query.email}
+            }
+            const result = await bookingCollection.find(query).toArray();
+            res.send(result)
+        })
+
+
+        // 3 bookings  syntax
+        app.post('/bookings', async (req, res) => {
             const booking = req.body;
+            console.log(booking);
+            const result = await bookingCollection.insertOne(booking)
+            res.send(result)
         })
 
 
