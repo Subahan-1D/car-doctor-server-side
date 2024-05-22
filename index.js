@@ -47,7 +47,7 @@ async function run() {
             const query = { _id: new ObjectId(id) }
             const options = {
                 // Include only the `title` and `imdb` fields in the returned document
-                projection: { title: 1, price: 1, service_id: 1, img:1 },
+                projection: { title: 1, price: 1, service_id: 1, img:1  },
             };
             const result = await serviceCollection.findOne(query, options)
             res.send(result);
@@ -73,6 +73,30 @@ async function run() {
             console.log(booking);
             const result = await bookingCollection.insertOne(booking)
             res.send(result)
+        })
+
+        // 6 updated bookings 
+        app.patch('/bookings/:id', async ( req,res)=>{
+            const id = req.params.id;
+            const filter = {_id : new ObjectId (id)}
+            const updatedBooking  = req.body;
+            console.log(updatedBooking);
+            const updateDoc = {
+                $set: {
+                  status: updatedBooking.status
+                },
+              };
+              const result = await bookingCollection.updateOne(filter , updateDoc)
+              res.send(result)
+        })
+        // 5 bookings delete
+
+        app.delete('/bookings/:id', async(req,res)=>{
+            const id = req.params.id;
+            const query = {_id : new ObjectId (id)}
+            const result  = await bookingCollection.deleteOne(query)
+            res.send(result)
+
         })
 
 
