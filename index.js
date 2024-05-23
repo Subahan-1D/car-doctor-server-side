@@ -1,13 +1,19 @@
 const express = require('express');
 const cors = require('cors');
+const jwt  = require('jsonwebtoken');
+const cookieParser = require('cookie-parser');
 const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 require('dotenv').config()
 const app = express();
 const port = process.env.PORT || 5000;
 
 //MIDDLEWARE
-app.use(cors());
+app.use(cors({
+    origin:['http://localhost:5173'],
+    credentials:true
+}));
 app.use(express.json());
+app.use(cookieParser());
 
 
 // mongodb
@@ -25,6 +31,32 @@ const client = new MongoClient(uri, {
     }
 });
 
+// my middlewares
+const logger = async(req,res,next)=>{
+    console.log('called : ', req.host, req.originalUrl);
+    next()
+}
+
+const verifyToken = async (req,res,next)=>{
+    const token = req.cookies?.token;
+    console.log('value of token in middleware', token);
+    if(!token){
+        req.status(403).send({message : 'forbidden'})
+    }
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err,decoded)=>{
+        // error
+        if(err){
+            console.log(err);
+            return res.status(403).send({message : 'forbidden'})
+        }
+        // if token in valid then it would be decoded
+        console.log('value in the token ', decoded);
+        req.decoded = decoded;
+        next()
+    })
+    
+}
+
 async function run() {
     try {
         // Connect the client to the server	(optional starting in v4.7)
@@ -33,8 +65,24 @@ async function run() {
         const serviceCollection = client.db('carDoctors').collection('services');
         const bookingCollection = client.db('carDoctors').collection('bookings')
 
-        //1 data load
-        app.get('/services', async (req, res) => {
+        //auth related api 
+
+        app.post('/jwt', logger, async ( req,res) =>{
+            const user = req.body;
+            console.log(user);
+            const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {expiresIn:'1h'})
+            res
+            .cookie('token',token, {
+                httpOnly:true,
+                secure:false,
+            })
+            .send({success:true})
+        })
+
+
+
+        //1 data load service related api
+        app.get('/services', logger, async (req, res) => {
             const cursor = serviceCollection.find()
             const result = await cursor.toArray()
             res.send(result);
@@ -56,8 +104,9 @@ async function run() {
 
         // 4 bookings some data 
 
-        app.get('/bookings', async(req,res)=>{
+        app.get('/bookings',logger, verifyToken, async(req,res)=>{
             console.log(req.query.email);
+            // console.log('secret token',req.cookies.token);
             let query = {}
             if(req.query?.email){
                 query ={email :req.query.email}
